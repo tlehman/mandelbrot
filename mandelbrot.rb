@@ -26,23 +26,12 @@ def mandelbrot_matrix(w, h)
     # compute z -> z^2 + c, where c is the initial value in the complex plane
     c = transform.call(row, col)
     z = c
-    iters = 0
     MAX_ITERS.times { |_|
       z = z*z + c
-      iters += 1
       break if z.magnitude > 2
     }
 
-    # map iteration count to color
-    i = (255*(Math.log(iters+1)/Math.log(MAX_ITERS))).floor
-
-    red,green,blue = if z.magnitude < 2
-                       [0,0,0]
-                     else
-                       [i,i,i]
-                     end
-
-    [red, green, blue]
+    (z.magnitude < 2) ? 0 : 255
   }
 
   w.times do |col|
@@ -57,9 +46,9 @@ end
 m = mandelbrot_matrix(width,height)
 width.times do |col|
   height.times do |row|
-    red,green,blue = m[row][col]
-    png[row,col] = ChunkyPNG::Color.rgba(red, green, blue, 255)
+    c = m[row][col]
+    png[row,col] = ChunkyPNG::Color.rgba(c,c,c, 255)
   end
 end
 
-png.save('pure-ruby.png', interlace: true)
+png.save('pure-ruby.png', interlace: false)
