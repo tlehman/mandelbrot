@@ -1,5 +1,6 @@
 require 'chunky_png'
 
+MAX_ITERS = 200
 width = 800
 height = 800
 png = ChunkyPNG::Image.new(width, height, ChunkyPNG::Color::TRANSPARENT)
@@ -15,8 +16,31 @@ png = ChunkyPNG::Image.new(width, height, ChunkyPNG::Color::TRANSPARENT)
 def mandelbrot_matrix(w, h)
   matrix = Array.new(h) { Array.new(w) }
 
+  transform = lambda { |row, col|
+    y = 2*(col-w/2.0)/w.to_f
+    x = -2*(row-h/4.0)/h.to_f
+    Complex.rect(x,y)
+  }
+
   color = lambda { |row, col|
     # compute z -> z^2 + c, where c is the initial value in the complex plane
+    c = transform.call(row, col)
+    z = c
+    iters = 0
+    MAX_ITERS.times { |_|
+      z = z*z + c
+      iters += 1
+      break if z.magnitude > 2
+    }
+
+    # map iteration count to color
+    i = (255*(Math.log(iters+1)/Math.log(MAX_ITERS))).floor
+
+    red,green,blue = if z.magnitude < 2
+                       [0,0,0]
+                     else
+                       [i,i,i]
+                     end
 
     [red, green, blue]
   }
@@ -26,11 +50,15 @@ def mandelbrot_matrix(w, h)
       matrix[row][col] = color.call(row, col)
     end
   end
+
+  matrix
 end
 
+m = mandelbrot_matrix(width,height)
 width.times do |col|
   height.times do |row|
-    png[row,col] = ChunkyPNG::Color.rgba(col % 256, row % 256, (col+row) % 256, 128)
+    red,green,blue = m[row][col]
+    png[row,col] = ChunkyPNG::Color.rgba(red, green, blue, 255)
   end
 end
 
